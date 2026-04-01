@@ -1,11 +1,6 @@
 import os
 from pathlib import Path
 
-import sys
-
-if 'test' in sys.argv:
-    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
-
 # Load .env file automatically
 try:
     from dotenv import load_dotenv
@@ -92,7 +87,11 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# Use simple storage during tests/debug; manifest storage in production
+if DEBUG or os.environ.get('TESTING') == 'True':
+    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+else:
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
