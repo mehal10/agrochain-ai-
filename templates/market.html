@@ -1,0 +1,163 @@
+{% extends 'app_base.html' %}
+{% block title %}Marketplace{% endblock %}
+{% block page_title %}Marketplace{% endblock %}
+{% block page_sub %}Buy & sell crops directly — no middlemen{% endblock %}
+{% block content %}
+
+<div class="grid2">
+  <!-- ADD CROP FORM (for farmers) -->
+  <div class="card">
+    <div class="card-header"><div class="card-title">➕ List Your Crop</div></div>
+    <div style="display:flex;flex-direction:column;gap:0.85rem;">
+      <div class="field-group">
+        <label class="field-label">Crop Name</label>
+        <input class="app-input" id="c-name" placeholder="e.g. Wheat">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+        <div class="field-group">
+          <label class="field-label">Emoji Icon</label>
+          <input class="app-input" id="c-emoji" placeholder="🌾" maxlength="4">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Quality Grade</label>
+          <select class="app-input" id="c-quality">
+            <option>Grade A</option><option>Grade B</option><option>Organic</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+        <div class="field-group">
+          <label class="field-label">Price (₹/kg)</label>
+          <input class="app-input" id="c-price" type="number" placeholder="30">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Quantity (kg)</label>
+          <input class="app-input" id="c-qty" type="number" placeholder="500">
+        </div>
+      </div>
+      <button class="btn-primary" onclick="addCrop()">List Crop →</button>
+    </div>
+  </div>
+
+  <!-- MY LISTINGS -->
+  <div class="card">
+    <div class="card-header"><div class="card-title">📦 My Listings</div></div>
+    {% if my_crops %}
+    <div style="display:flex;flex-direction:column;gap:0.6rem">
+      {% for c in my_crops %}
+      <div style="display:flex;align-items:center;gap:0.75rem;background:var(--bark);border-radius:10px;padding:0.75rem;">
+        <span style="font-size:1.6rem">{{ c.emoji }}</span>
+        <div style="flex:1">
+          <div style="font-weight:600">{{ c.name }}</div>
+          <div style="font-size:0.75rem;color:var(--fog)">{{ c.quantity_kg }}kg · {{ c.quality }}</div>
+        </div>
+        <div style="color:var(--lime);font-weight:700">₹{{ c.price_per_kg }}/kg</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:2.5rem;color:var(--fog)">No listings yet</div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- ALL AVAILABLE CROPS -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">🏪 Available Crops</div>
+    <span style="font-size:0.8rem;color:var(--fog)">{{ crops|length }} listings</span>
+  </div>
+  {% if crops %}
+  <div class="crop-grid">
+    {% for crop in crops %}
+    <div class="crop-card">
+      <div class="crop-img">{{ crop.emoji }}<span class="crop-badge">{{ crop.quality }}</span></div>
+      <div class="crop-info">
+        <div class="crop-name">{{ crop.name }}</div>
+        <div class="crop-farmer">by {{ crop.farmer.get_full_name|default:crop.farmer.username }}</div>
+        <div class="crop-price">₹{{ crop.price_per_kg }}/kg</div>
+        <div class="crop-meta">
+          <span class="crop-qty">{{ crop.quantity_kg }} kg</span>
+          {% if crop.farmer != request.user %}
+          <button class="buy-btn" onclick="openBuy({{ crop.id }},'{{ crop.name }}',{{ crop.price_per_kg }})">Buy</button>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:3rem;color:var(--fog)">
+    <div style="font-size:3rem">🌾</div>
+    <div style="margin-top:0.75rem">No crops listed yet. Be the first!</div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- BUY MODAL -->
+<div class="modal-overlay" id="buy-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeBuy()">✕</button>
+    <div class="modal-title" id="buy-title">Buy Crop</div>
+    <div class="modal-sub">Enter quantity to purchase</div>
+    <div class="modal-form">
+      <input type="hidden" id="buy-crop-id">
+      <input type="hidden" id="buy-unit-price">
+      <div class="field-group">
+        <label class="field-label">Quantity (kg)</label>
+        <input class="app-input" id="buy-qty" type="number" placeholder="50" oninput="updateCost()">
+      </div>
+      <div style="background:var(--bark);border-radius:10px;padding:1rem;display:flex;justify-content:space-between;">
+        <span style="color:var(--fog)">Total Cost</span>
+        <span id="buy-total" style="color:var(--lime);font-weight:700;font-family:'Fraunces',serif;font-size:1.1rem">₹ 0</span>
+      </div>
+      <button class="btn-primary" onclick="confirmBuy()">Confirm Order →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function addCrop() {
+  const name = document.getElementById('c-name').value.trim();
+  const price = parseFloat(document.getElementById('c-price').value);
+  const qty = parseFloat(document.getElementById('c-qty').value);
+  if (!name||!price||!qty) { showToast('Please fill all fields'); return; }
+  fetch('/api/crop/add/', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','X-CSRFToken':getCookie('csrftoken')},
+    body: JSON.stringify({name, emoji:document.getElementById('c-emoji').value||'🌾', price, quantity:qty, quality:document.getElementById('c-quality').value})
+  }).then(r=>r.json()).then(d=>{
+    if(d.status==='ok') { showToast('✅ Crop listed!'); setTimeout(()=>location.reload(),1200); }
+    else showToast('❌ '+d.error);
+  });
+}
+function openBuy(id, name, price) {
+  document.getElementById('buy-title').textContent = 'Buy '+name;
+  document.getElementById('buy-crop-id').value = id;
+  document.getElementById('buy-unit-price').value = price;
+  document.getElementById('buy-qty').value = '';
+  document.getElementById('buy-total').textContent = '₹ 0';
+  document.getElementById('buy-modal').classList.add('open');
+}
+function closeBuy() { document.getElementById('buy-modal').classList.remove('open'); }
+function updateCost() {
+  const qty = parseFloat(document.getElementById('buy-qty').value)||0;
+  const price = parseFloat(document.getElementById('buy-unit-price').value)||0;
+  document.getElementById('buy-total').textContent = '₹ '+(qty*price).toLocaleString('en-IN');
+}
+function confirmBuy() {
+  const crop_id = document.getElementById('buy-crop-id').value;
+  const qty = parseFloat(document.getElementById('buy-qty').value);
+  if (!qty||qty<=0) { showToast('Enter valid quantity'); return; }
+  fetch('/api/order/place/', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','X-CSRFToken':getCookie('csrftoken')},
+    body: JSON.stringify({crop_id, quantity: qty})
+  }).then(r=>r.json()).then(d=>{
+    if(d.status==='ok') { closeBuy(); showToast(`✅ Order placed! Total: ₹${d.total.toLocaleString('en-IN')}`); }
+    else showToast('❌ '+d.error);
+  });
+}
+document.getElementById('buy-modal').addEventListener('click', e=>{ if(e.target.id==='buy-modal') closeBuy(); });
+</script>
+{% endblock %}

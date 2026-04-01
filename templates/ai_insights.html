@@ -1,0 +1,187 @@
+{% extends 'app_base.html' %}
+{% block title %}AI Insights{% endblock %}
+{% block page_title %}AI Insights{% endblock %}
+{% block page_sub %}Smart recommendations powered by Gemini AI{% endblock %}
+{% block content %}
+
+<div class="grid2">
+  <!-- MAIN CHAT -->
+  <div class="card" style="grid-column: 1 / -1;">
+    <div class="card-header">
+      <div class="card-title">🤖 AgroChain AI Assistant</div>
+      <span style="font-size:0.75rem;color:var(--fog);background:var(--bark);padding:3px 10px;border-radius:20px;">
+        Powered by {{ llm_provider|default:"Gemini AI" }}
+      </span>
+    </div>
+
+    <!-- QUICK PROMPT CHIPS -->
+    <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.5rem;">
+      {% for prompt in quick_prompts %}
+      <button class="quick-chip" onclick="usePrompt('{{ prompt }}')">{{ prompt }}</button>
+      {% empty %}
+      <button class="quick-chip" onclick="usePrompt('What crop should I plant this season?')">🌾 Best crop this season?</button>
+      <button class="quick-chip" onclick="usePrompt('How much should I irrigate today?')">💧 Irrigation advice</button>
+      <button class="quick-chip" onclick="usePrompt('What are current wheat prices in Gujarat?')">📊 Wheat prices</button>
+      <button class="quick-chip" onclick="usePrompt('My tomato leaves are turning yellow, why?')">🍅 Crop disease help</button>
+      <button class="quick-chip" onclick="usePrompt('How to improve my soil pH?')">⚗️ Fix soil pH</button>
+      <button class="quick-chip" onclick="usePrompt('Best time to sell onions this month?')">🧅 Sell timing</button>
+      {% endfor %}
+    </div>
+
+    <!-- CHAT HISTORY -->
+    <div id="ai-page-chat" style="
+      min-height:300px; max-height:460px; overflow-y:auto;
+      background:var(--bark); border-radius:12px; padding:1.25rem;
+      display:flex; flex-direction:column; gap:0.85rem;
+    ">
+      {% if conversation_history %}
+        {% for conv in conversation_history %}
+        <div class="msg user">{{ conv.message }}</div>
+        <div class="msg bot">{{ conv.response }}</div>
+        {% endfor %}
+      {% else %}
+      <div class="msg bot">
+        👋 Hello {{ request.user.first_name|default:"Farmer" }}! I'm your AgroChain AI advisor.<br><br>
+        I can help you with:<br>
+        🌱 Crop selection & rotation<br>
+        💧 Irrigation scheduling<br>
+        🧪 Soil health & fertilizers<br>
+        📊 Market prices & demand<br>
+        🐛 Pest & disease management<br><br>
+        Pick a quick prompt above or ask me anything!
+      </div>
+      {% endif %}
+    </div>
+
+    <div id="ai-page-typing" style="display:none;padding:0.5rem 0;align-items:center;gap:4px;">
+      <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+      <span style="font-size:0.75rem;color:var(--fog);margin-left:4px">AI is thinking…</span>
+    </div>
+
+    <div style="display:flex;gap:0.75rem;">
+      <input class="app-input" id="ai-page-input" placeholder="Ask anything about your farm…"
+        style="flex:1;" onkeydown="if(event.key==='Enter')sendPageChat()">
+      <button class="btn-primary" style="width:auto;padding:0.65rem 1.5rem" onclick="sendPageChat()">Send ➤</button>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM INSIGHT CARDS -->
+<div class="grid3">
+  <div class="card">
+    <div class="card-header"><div class="card-title">🌦 Weather Advisory</div></div>
+    <div style="font-size:0.85rem;color:var(--fog);line-height:1.7">
+      <div style="font-size:2rem;margin-bottom:0.5rem">🌤</div>
+      <strong style="color:var(--cream)">Gujarat Region Forecast</strong><br>
+      Temperature: 28–34°C<br>
+      Humidity: 62–70%<br>
+      Rain expected: Mid-month<br>
+      <br>
+      <span style="color:var(--lime)">✓ Good sowing conditions</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">🐛 Pest Alert</div></div>
+    <div style="font-size:0.85rem;color:var(--fog);line-height:1.7">
+      <div style="font-size:2rem;margin-bottom:0.5rem">⚠️</div>
+      <strong style="color:var(--amber)">Active Alerts This Week</strong><br>
+      • Aphids on wheat crops<br>
+      • Fall armyworm — maize<br>
+      • Powdery mildew risk<br>
+      <br>
+      <button class="quick-chip" onclick="usePrompt('How to treat aphids on wheat?')">Get AI Treatment →</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">💡 AI Tips</div></div>
+    <div style="font-size:0.85rem;color:var(--fog);line-height:1.7" id="ai-tip-box">
+      <div style="font-size:2rem;margin-bottom:0.5rem">🌱</div>
+      <strong style="color:var(--cream)">Today's Smart Tip</strong><br>
+      Apply urea fertilizer in the early morning or evening to reduce nitrogen loss due to volatilization.<br>
+      <br>
+      <button class="quick-chip" onclick="loadNewTip()">🔄 New Tip</button>
+    </div>
+  </div>
+</div>
+
+<style>
+.quick-chip {
+  padding: 0.4rem 0.9rem;
+  background: rgba(124,201,63,0.08);
+  border: 1px solid rgba(124,201,63,0.22);
+  border-radius: 100px;
+  color: var(--lime);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.quick-chip:hover {
+  background: rgba(124,201,63,0.18);
+  border-color: rgba(124,201,63,0.4);
+}
+</style>
+
+<script>
+const tips = [
+  '🌱 Apply urea fertilizer in early morning or evening to reduce nitrogen volatilization loss.',
+  '💧 Drip irrigation saves up to 50% water vs flood irrigation — ideal for tomatoes and vegetables.',
+  '🌾 Crop rotation with legumes like moong or groundnut naturally fixes nitrogen in soil.',
+  '🐛 Use pheromone traps early in the season to monitor and control pest populations cost-effectively.',
+  '📊 Sell wheat in Oct–Nov and cotton in Dec–Jan for peak market prices in Gujarat mandis.',
+  '⚗️ Test your soil pH every season — most crops thrive between 6.0 and 7.0.',
+  '🌿 Add vermicompost to improve soil water retention and beneficial microbial activity.',
+];
+let tipIdx = 0;
+
+function loadNewTip() {
+  tipIdx = (tipIdx + 1) % tips.length;
+  document.getElementById('ai-tip-box').innerHTML = `
+    <div style="font-size:2rem;margin-bottom:0.5rem">🌱</div>
+    <strong style="color:var(--cream)">Smart Tip</strong><br>
+    ${tips[tipIdx]}<br><br>
+    <button class="quick-chip" onclick="loadNewTip()">🔄 New Tip</button>
+  `;
+}
+
+function usePrompt(text) {
+  document.getElementById('ai-page-input').value = text;
+  sendPageChat();
+}
+
+function sendPageChat() {
+  const inp = document.getElementById('ai-page-input');
+  const msg = inp.value.trim();
+  if (!msg) return;
+  inp.value = '';
+
+  const chat = document.getElementById('ai-page-chat');
+  chat.innerHTML += `<div class="msg user">${escapeHtml(msg)}</div>`;
+  chat.scrollTop = chat.scrollHeight;
+
+  const typing = document.getElementById('ai-page-typing');
+  typing.style.display = 'flex';
+
+  fetch('/api/ai/chat/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+    body: JSON.stringify({ message: msg })
+  })
+  .then(r => r.json())
+  .then(data => {
+    typing.style.display = 'none';
+    const reply = data.response || data.error || 'Something went wrong.';
+    chat.innerHTML += `<div class="msg bot">${escapeHtml(reply)}</div>`;
+    chat.scrollTop = chat.scrollHeight;
+  })
+  .catch(() => {
+    typing.style.display = 'none';
+    chat.innerHTML += `<div class="msg bot">⚠ Network error. Please try again.</div>`;
+  });
+}
+</script>
+{% endblock %}

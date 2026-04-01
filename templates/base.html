@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}AgroChain AI{% endblock %} – Smart Sustainable Farming</title>
+{% load static %}
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;0,9..144,900;1,9..144,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/main.css' %}">
+{% block extra_head %}{% endblock %}
+</head>
+<body>
+{% if messages %}
+<div id="django-messages" style="display:none">
+  {% for msg in messages %}
+  <span data-type="{{ msg.tags }}">{{ msg }}</span>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% block body %}{% endblock %}
+
+<div class="toast" id="toast"></div>
+
+<script src="{% static 'js/main.js' %}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

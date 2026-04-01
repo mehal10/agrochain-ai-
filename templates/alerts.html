@@ -1,0 +1,32 @@
+{% extends 'app_base.html' %}
+{% block title %}Alerts{% endblock %}
+{% block page_title %}Alerts & Notifications{% endblock %}
+{% block page_sub %}Stay updated with critical farm alerts{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">🔔 All Alerts</div>
+    <span style="font-size:0.8rem;color:var(--fog)">{{ alerts|length }} total</span>
+  </div>
+  {% if alerts %}
+  <div style="display:flex;flex-direction:column;gap:0.6rem">
+    {% for a in alerts %}
+    <div class="alert-item" style="border-left:3px solid {% if a.severity == 'critical' %}var(--alert){% elif a.severity == 'warning' %}var(--amber){% else %}var(--lime){% endif %}">
+      <div class="alert-dot" style="background:{% if a.severity == 'critical' %}var(--alert){% elif a.severity == 'warning' %}var(--amber){% else %}var(--lime){% endif %}"></div>
+      <div style="flex:1">
+        <div class="alert-text">{{ a.title }}</div>
+        <div style="font-size:0.82rem;color:var(--fog);margin-top:2px">{{ a.message }}</div>
+        <div class="alert-time">{{ a.created_at|timesince }} ago · {{ a.severity|title }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:4rem;color:var(--fog)">
+    <div style="font-size:3.5rem">✅</div>
+    <div style="margin-top:1rem;font-size:1rem">All clear! No alerts at this time.</div>
+    <div style="margin-top:0.5rem;font-size:0.85rem">Alerts are generated automatically when farm data is saved.</div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

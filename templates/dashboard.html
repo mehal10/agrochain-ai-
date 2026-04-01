@@ -1,0 +1,123 @@
+{% extends 'app_base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_sub %}Real-time overview of your farm performance{% endblock %}
+{% block content %}
+
+<!-- STATS GRID -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-icon">💧</div>
+    <div>
+      <div class="stat-val">{{ latest_data.soil_moisture|default:"72" }}%</div>
+      <div class="stat-lbl">Soil Moisture</div>
+      <div class="stat-change up">↑ Optimal range</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon">🌡️</div>
+    <div>
+      <div class="stat-val">{{ latest_data.temperature|default:"28" }}°C</div>
+      <div class="stat-lbl">Temperature</div>
+      <div class="stat-change up">↑ Good for crops</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon">🌾</div>
+    <div>
+      <div class="stat-val">{{ my_crops.count }}</div>
+      <div class="stat-lbl">Active Listings</div>
+      <div class="stat-change up">Marketplace</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon">🔔</div>
+    <div>
+      <div class="stat-val">{{ unread_alerts }}</div>
+      <div class="stat-lbl">Unread Alerts</div>
+      {% if unread_alerts > 0 %}
+      <div class="stat-change down">⚠ Needs attention</div>
+      {% else %}
+      <div class="stat-change up">✓ All clear</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- GRID 2 COL -->
+<div class="grid2">
+  <!-- AI QUICK CHAT -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">🤖 AI Quick Advisor</div>
+    </div>
+    <div id="inline-chat" style="max-height:220px;overflow-y:auto;margin-bottom:1rem;">
+      <div class="msg bot">Hello {{ request.user.first_name|default:"Farmer" }}! 🌾 I'm your AI farming assistant. Ask me anything about your crops, soil, or market prices!</div>
+    </div>
+    <div class="ai-input-row" style="padding:0;border:none;">
+      <input class="ai-input" id="inline-input" placeholder="e.g. When should I irrigate wheat?" onkeydown="if(event.key==='Enter')sendInline()">
+      <button class="ai-send" onclick="sendInline()">➤</button>
+    </div>
+  </div>
+
+  <!-- FARM STATUS -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">🌱 Farm Status</div>
+      <a href="/farm/" class="card-link">Update →</a>
+    </div>
+    {% if latest_data %}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.85rem;">
+      <div style="background:var(--bark);border-radius:10px;padding:0.9rem;">
+        <div style="font-size:0.72rem;color:var(--fog)">Humidity</div>
+        <div style="font-size:1.3rem;font-weight:700;color:var(--lime)">{{ latest_data.humidity }}%</div>
+      </div>
+      <div style="background:var(--bark);border-radius:10px;padding:0.9rem;">
+        <div style="font-size:0.72rem;color:var(--fog)">pH Level</div>
+        <div style="font-size:1.3rem;font-weight:700;color:var(--sun)">{{ latest_data.ph_level }}</div>
+      </div>
+      <div style="background:var(--bark);border-radius:10px;padding:0.9rem;">
+        <div style="font-size:0.72rem;color:var(--fog)">Nitrogen</div>
+        <div style="font-size:1.3rem;font-weight:700;color:var(--sky)">{{ latest_data.nitrogen }} kg/ha</div>
+      </div>
+      <div style="background:var(--bark);border-radius:10px;padding:0.9rem;">
+        <div style="font-size:0.72rem;color:var(--fog)">Irrigation</div>
+        <div style="font-size:1.1rem;font-weight:700;color:{% if latest_data.irrigation_status %}var(--lime){% else %}var(--fog){% endif %}">
+          {% if latest_data.irrigation_status %}✓ Active{% else %}○ Off{% endif %}
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:2rem;color:var(--fog);">
+      <div style="font-size:2.5rem;margin-bottom:0.75rem">🌱</div>
+      <div>No farm data yet.</div>
+      <a href="/farm/" class="btn-primary" style="display:inline-block;margin-top:1rem;padding:0.6rem 1.5rem;text-decoration:none">Add Farm Data</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- MY CROPS -->
+{% if my_crops %}
+<div class="card" style="margin-top:0">
+  <div class="card-header">
+    <div class="card-title">🌾 My Listings</div>
+    <a href="/market/" class="card-link">View All →</a>
+  </div>
+  <div class="crop-grid">
+    {% for crop in my_crops %}
+    <div class="crop-card">
+      <div class="crop-img">{{ crop.emoji }}<span class="crop-badge">{{ crop.quality }}</span></div>
+      <div class="crop-info">
+        <div class="crop-name">{{ crop.name }}</div>
+        <div class="crop-price">₹{{ crop.price_per_kg }}/kg</div>
+        <div class="crop-meta">
+          <span class="crop-qty">{{ crop.quantity_kg }} kg available</span>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}

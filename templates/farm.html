@@ -1,0 +1,124 @@
+{% extends 'app_base.html' %}
+{% block title %}Farm Monitor{% endblock %}
+{% block page_title %}Farm Monitor{% endblock %}
+{% block page_sub %}Sensor data, irrigation control & manual input{% endblock %}
+{% block content %}
+
+<div class="grid2">
+  <!-- INPUT FORM -->
+  <div class="card">
+    <div class="card-header"><div class="card-title">📊 Update Farm Data</div></div>
+    <form id="farm-form" class="input-grid">
+      {% csrf_token %}
+      <div class="field-group">
+        <label class="field-label">💧 Soil Moisture (%)</label>
+        <div class="range-wrap">
+          <input type="range" class="range-input" min="0" max="100" value="{{ latest.soil_moisture|default:72 }}" id="soil_moisture" oninput="updateRange(this,'v-sm')">
+          <span class="range-val" id="v-sm">{{ latest.soil_moisture|default:72 }}%</span>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">🌡️ Temperature (°C)</label>
+        <div class="range-wrap">
+          <input type="range" class="range-input" min="10" max="50" value="{{ latest.temperature|default:28 }}" id="temperature" oninput="updateRange(this,'v-temp')">
+          <span class="range-val" id="v-temp">{{ latest.temperature|default:28 }}°C</span>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">💨 Humidity (%)</label>
+        <div class="range-wrap">
+          <input type="range" class="range-input" min="0" max="100" value="{{ latest.humidity|default:65 }}" id="humidity" oninput="updateRange(this,'v-hum')">
+          <span class="range-val" id="v-hum">{{ latest.humidity|default:65 }}%</span>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">⚗️ pH Level</label>
+        <div class="range-wrap">
+          <input type="range" class="range-input" min="4" max="9" step="0.1" value="{{ latest.ph_level|default:7 }}" id="ph_level" oninput="updateRange(this,'v-ph')">
+          <span class="range-val" id="v-ph">{{ latest.ph_level|default:7 }}</span>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">🧪 Nitrogen (kg/ha)</label>
+        <input type="number" class="app-input" id="nitrogen" value="{{ latest.nitrogen|default:0 }}" min="0" max="300">
+      </div>
+      <div class="field-group">
+        <label class="field-label">🧪 Phosphorus (kg/ha)</label>
+        <input type="number" class="app-input" id="phosphorus" value="{{ latest.phosphorus|default:0 }}" min="0" max="200">
+      </div>
+      <div class="field-group">
+        <label class="field-label">🧪 Potassium (kg/ha)</label>
+        <input type="number" class="app-input" id="potassium" value="{{ latest.potassium|default:0 }}" min="0" max="200">
+      </div>
+      <div class="field-group" style="display:flex;align-items:center;gap:0.75rem;padding-top:1.5rem">
+        <label class="field-label" style="margin:0">💦 Irrigation</label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+          <input type="checkbox" id="irrigation" {% if latest.irrigation_status %}checked{% endif %} style="accent-color:var(--lime);width:18px;height:18px;">
+          <span style="font-size:0.85rem;color:var(--fog)">Active</span>
+        </label>
+      </div>
+      <div></div>
+      <button type="button" class="btn-primary" onclick="saveFarmData()" style="margin-top:0.5rem">Save Farm Data</button>
+    </form>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="card">
+    <div class="card-header"><div class="card-title">📋 Recent Readings</div></div>
+    {% if history %}
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:0.82rem;">
+        <thead>
+          <tr style="color:var(--fog);border-bottom:1px solid var(--bark);">
+            <th style="padding:0.5rem;text-align:left">Time</th>
+            <th style="padding:0.5rem;text-align:right">Moisture</th>
+            <th style="padding:0.5rem;text-align:right">Temp</th>
+            <th style="padding:0.5rem;text-align:right">pH</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for d in history %}
+          <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+            <td style="padding:0.5rem;color:var(--fog)">{{ d.recorded_at|timesince }} ago</td>
+            <td style="padding:0.5rem;text-align:right;color:var(--sky)">{{ d.soil_moisture }}%</td>
+            <td style="padding:0.5rem;text-align:right;color:var(--amber)">{{ d.temperature }}°C</td>
+            <td style="padding:0.5rem;text-align:right;color:var(--lime)">{{ d.ph_level }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:3rem;color:var(--fog)">
+      <div style="font-size:3rem">📊</div>
+      <div style="margin-top:0.75rem">No readings yet. Add your first farm data!</div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+function updateRange(el, valId) {
+  document.getElementById(valId).textContent = el.value + (el.id==='temperature'?'°C':el.id==='ph_level'?'':' %');
+}
+function saveFarmData() {
+  fetch('/api/farm/save/', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json','X-CSRFToken': getCookie('csrftoken')},
+    body: JSON.stringify({
+      soil_moisture: parseFloat(document.getElementById('soil_moisture').value),
+      temperature: parseFloat(document.getElementById('temperature').value),
+      humidity: parseFloat(document.getElementById('humidity').value),
+      ph_level: parseFloat(document.getElementById('ph_level').value),
+      nitrogen: parseFloat(document.getElementById('nitrogen').value)||0,
+      phosphorus: parseFloat(document.getElementById('phosphorus').value)||0,
+      potassium: parseFloat(document.getElementById('potassium').value)||0,
+      irrigation: document.getElementById('irrigation').checked,
+    })
+  }).then(r=>r.json()).then(d=>{
+    if(d.status==='ok') { showToast('✅ Farm data saved!'); setTimeout(()=>location.reload(),1200); }
+    else showToast('❌ Error: '+d.error);
+  });
+}
+</script>
+{% endblock %}

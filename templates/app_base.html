@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block body %}
+<div id="app" style="display:flex; min-height:100vh;">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-small">🌾</div>
+      <div>
+        <div class="logo-text">AgroChain</div>
+        <div class="logo-sub">AI Platform</div>
+      </div>
+    </div>
+
+    <div style="flex:1; overflow-y:auto; padding-top:0.5rem;">
+      <div class="nav-section">
+        <div class="nav-label">Main</div>
+        <a href="{% url 'dashboard' %}" class="nav-item {% if page == 'dashboard' %}active{% endif %}">
+          <span class="nav-icon">📊</span><span>Dashboard</span>
+        </a>
+        <a href="{% url 'farm' %}" class="nav-item {% if page == 'farm' %}active{% endif %}">
+          <span class="nav-icon">🌱</span><span>Farm Monitor</span>
+        </a>
+        <a href="{% url 'ai_insights' %}" class="nav-item {% if page == 'ai' %}active{% endif %}">
+          <span class="nav-icon">🤖</span><span>AI Insights</span>
+        </a>
+        <a href="{% url 'market' %}" class="nav-item {% if page == 'market' %}active{% endif %}">
+          <span class="nav-icon">🏪</span><span>Marketplace</span>
+        </a>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Insights</div>
+        <a href="{% url 'analytics' %}" class="nav-item {% if page == 'analytics' %}active{% endif %}">
+          <span class="nav-icon">📈</span><span>Analytics</span>
+        </a>
+        <a href="{% url 'alerts' %}" class="nav-item {% if page == 'alerts' %}active{% endif %}">
+          <span class="nav-icon">🔔</span><span>Alerts</span>
+        </a>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Account</div>
+        <a href="{% url 'plans' %}" class="nav-item {% if page == 'plans' %}active{% endif %}">
+          <span class="nav-icon">⭐</span><span>Subscription</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="user-card">
+      <div class="user-av">{{ request.user.first_name|first|upper }}{{ request.user.last_name|first|upper }}</div>
+      <div>
+        <div class="user-name">{{ request.user.get_full_name|default:request.user.username }}</div>
+        <div class="user-role">{{ profile.role|title|default:"Farmer" }}</div>
+      </div>
+      <a href="{% url 'logout' %}" title="Logout" style="margin-left:auto; color:var(--fog); text-decoration:none; font-size:1.1rem;">↩</a>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <div class="pg-title">{% block page_title %}Dashboard{% endblock %}</div>
+        <div class="pg-sub">{% block page_sub %}{% endblock %}</div>
+      </div>
+      <div style="display:flex;gap:0.75rem;align-items:center;">
+        <button class="topbar-btn" onclick="toggleAI()" title="AI Assistant">🤖 AI Chat</button>
+      </div>
+    </div>
+
+    <div class="content-area">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+
+</div>
+
+<!-- AI CHAT PANEL -->
+<button class="ai-fab" onclick="toggleAI()">🤖</button>
+<div class="ai-panel" id="ai-panel">
+  <div class="ai-header">
+    <div class="ai-header-title">🌾 AgroChain AI</div>
+    <button onclick="toggleAI()" style="background:none;border:none;color:var(--fog);cursor:pointer;font-size:1.1rem;">✕</button>
+  </div>
+  <div class="ai-messages" id="ai-msgs">
+    <div class="msg bot">Hello! I'm AgroChain AI 🌾 Ask me about irrigation, crop prices, soil health, pests, or anything farming related!</div>
+  </div>
+  <div class="ai-typing" id="ai-typing">
+    <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+  </div>
+  <div class="ai-input-row">
+    <input class="ai-input" id="ai-input" placeholder="Ask about your farm…" onkeydown="if(event.key==='Enter')sendMsg()">
+    <button class="ai-send" onclick="sendMsg()">➤</button>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends 'app_base.html' %}
+{% block title %}Plans{% endblock %}
+{% block page_title %}Subscription Plans{% endblock %}
+{% block page_sub %}Choose the plan that fits your farm{% endblock %}
+{% block content %}
+<div class="plan-grid">
+  <div class="plan-card">
+    <div class="plan-name">🌱 Starter</div>
+    <div class="plan-price">Free<span> /month</span></div>
+    <ul class="plan-features">
+      <li>5 crop listings</li>
+      <li>Basic AI chat (10 queries/day)</li>
+      <li>Manual farm data entry</li>
+      <li>Community marketplace</li>
+      <li>Email alerts</li>
+    </ul>
+    <button class="btn-primary" style="background:rgba(124,201,63,0.12);color:var(--lime);border:1.5px solid rgba(124,201,63,0.3);box-shadow:none" onclick="showToast('You are on the Free plan')">Current Plan</button>
+  </div>
+  <div class="plan-card featured">
+    <div class="plan-name">🚀 Pro Farmer</div>
+    <div class="plan-price">₹499<span> /month</span></div>
+    <ul class="plan-features">
+      <li>Unlimited crop listings</li>
+      <li>Unlimited AI queries</li>
+      <li>IoT sensor integration</li>
+      <li>Advanced analytics & forecasts</li>
+      <li>SMS + WhatsApp alerts</li>
+      <li>Priority buyer matching</li>
+      <li>Export reports (PDF/Excel)</li>
+    </ul>
+    <button class="btn-primary" onclick="showToast('Redirecting to payment gateway…')">Upgrade to Pro →</button>
+  </div>
+  <div class="plan-card">
+    <div class="plan-name">🏢 Enterprise</div>
+    <div class="plan-price">₹1,999<span> /month</span></div>
+    <ul class="plan-features">
+      <li>All Pro features</li>
+      <li>Multi-farm management</li>
+      <li>Dedicated AI model fine-tuned</li>
+      <li>Custom integrations & API</li>
+      <li>Dedicated account manager</li>
+      <li>SLA support 24/7</li>
+      <li>White-label option</li>
+    </ul>
+    <button class="btn-primary" style="background:rgba(124,201,63,0.12);color:var(--lime);border:1.5px solid rgba(124,201,63,0.3);box-shadow:none" onclick="showToast('Contact sales@agrochain.in')">Contact Sales</button>
+  </div>
+</div>
+{% endblock %}

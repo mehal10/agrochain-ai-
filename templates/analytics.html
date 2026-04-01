@@ -1,0 +1,47 @@
+{% extends 'app_base.html' %}
+{% block title %}Analytics{% endblock %}
+{% block page_title %}Analytics{% endblock %}
+{% block page_sub %}Track revenue, savings & demand forecasts{% endblock %}
+{% block content %}
+<div class="analytics-grid">
+  <div class="mini-stat"><div class="mini-stat-val">₹{{ total_revenue|floatformat:0|default:"0" }}</div><div class="mini-stat-lbl">Total Revenue</div><div class="mini-stat-change">↑ This season</div></div>
+  <div class="mini-stat"><div class="mini-stat-val">{{ my_crops.count }}</div><div class="mini-stat-lbl">Crops Listed</div><div class="mini-stat-change">Active</div></div>
+  <div class="mini-stat"><div class="mini-stat-val">{{ orders.count }}</div><div class="mini-stat-lbl">Orders Placed</div><div class="mini-stat-change">As buyer</div></div>
+</div>
+<div class="grid2">
+  <div class="card">
+    <div class="card-header"><div class="card-title">📊 Crop Sales Breakdown</div></div>
+    {% if my_crops %}
+    {% for c in my_crops %}
+    <div style="margin-bottom:0.85rem">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:0.85rem">
+        <span>{{ c.emoji }} {{ c.name }}</span>
+        <span style="color:var(--lime);font-weight:600">₹{{ c.price_per_kg }}/kg</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:{% widthratio c.price_per_kg 100 100 %}%"></div></div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div style="text-align:center;padding:2rem;color:var(--fog)">No crops listed yet</div>
+    {% endif %}
+  </div>
+  <div class="card">
+    <div class="card-header"><div class="card-title">📈 Market Demand Forecast</div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+      {% for item in demand_data %}
+      <div style="background:var(--bark);border-radius:10px;padding:0.9rem;text-align:center">
+        <div style="font-size:1.5rem">{{ item.emoji }}</div>
+        <div style="font-size:0.72rem;color:var(--fog);margin:4px 0">{{ item.crop }}</div>
+        <div style="font-weight:700;color:var(--lime);font-size:0.9rem">{{ item.demand }}</div>
+        <div style="font-size:0.8rem;color:var(--fog);margin-top:4px">{{ item.price }}</div>
+      </div>
+      {% empty %}
+      <div style="background:var(--bark);border-radius:10px;padding:0.9rem;text-align:center"><div style="font-size:1.5rem">🌾</div><div style="font-size:0.72rem;color:var(--fog);margin:4px 0">Wheat</div><div style="font-weight:700;color:var(--lime)">High</div><div style="font-size:0.8rem;color:var(--fog);margin-top:4px">₹30–35/kg</div></div>
+      <div style="background:var(--bark);border-radius:10px;padding:0.9rem;text-align:center"><div style="font-size:1.5rem">🍅</div><div style="font-size:0.72rem;color:var(--fog);margin:4px 0">Tomato</div><div style="font-weight:700;color:var(--sun)">Very High</div><div style="font-size:0.8rem;color:var(--fog);margin-top:4px">₹22–28/kg</div></div>
+      <div style="background:var(--bark);border-radius:10px;padding:0.9rem;text-align:center"><div style="font-size:1.5rem">🧅</div><div style="font-size:0.72rem;color:var(--fog);margin:4px 0">Onion</div><div style="font-weight:700;color:var(--amber)">Medium</div><div style="font-size:0.8rem;color:var(--fog);margin-top:4px">₹18–22/kg</div></div>
+      <div style="background:var(--bark);border-radius:10px;padding:0.9rem;text-align:center"><div style="font-size:1.5rem">🌸</div><div style="font-size:0.72rem;color:var(--fog);margin:4px 0">Cotton</div><div style="font-weight:700;color:var(--lime)">High</div><div style="font-size:0.8rem;color:var(--fog);margin-top:4px">₹68–72/kg</div></div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}
