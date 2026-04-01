@@ -1,6 +1,11 @@
 import os
 from pathlib import Path
 
+import sys
+
+if 'test' in sys.argv:
+    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+
 # Load .env file automatically
 try:
     from dotenv import load_dotenv
