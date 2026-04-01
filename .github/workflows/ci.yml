@@ -8,6 +8,7 @@ on:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true   # ✅ future-proof
+  CI: "true"                                 # ✅ for Django settings
 
 jobs:
   # ── 1. TEST ──────────────────────────────────
@@ -17,24 +18,33 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5   # ✅ updated
+        uses: actions/checkout@v5
 
       - name: Set up Python 3.11
-        uses: actions/setup-python@v6   # ✅ updated
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
 
       - name: Cache pip packages
-        uses: actions/cache@v5   # ✅ updated
+        uses: actions/cache@v5
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
           restore-keys: ${{ runner.os }}-pip-
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-      - name: Run Django checks
+      # ✅ IMPORTANT: Fix static files error
+      - name: Collect static files
+        env:
+          SECRET_KEY: ci-test-secret-key-not-for-production
+          DEBUG: "True"
+        run: python manage.py collectstatic --noinput
+
+      - name: Run Django checks & migrate
         env:
           SECRET_KEY: ci-test-secret-key-not-for-production
           DEBUG: "True"
@@ -60,7 +70,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
 
     steps:
-      - uses: actions/checkout@v5   # ✅ updated
+      - uses: actions/checkout@v5
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -79,7 +89,7 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/agrochain-ai:latest
             ${{ secrets.DOCKER_USERNAME }}/agrochain-ai:${{ github.sha }}
-          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/agrochain-ai:buildcache   # ✅ fixed typo
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/agrochain-ai:buildcache
           cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/agrochain-ai:buildcache,mode=max
 
   # ── 3. DEPLOY ────────────────────────────────
@@ -90,7 +100,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
 
     steps:
-      - uses: actions/checkout@v5   # ✅ updated
+      - uses: actions/checkout@v5
 
       - name: Deployment step placeholder
         run: echo "✅ Build complete. Configure your deploy target"
